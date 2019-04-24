@@ -18,6 +18,7 @@
               :on-progress="handleProgress"
               :on-success="handleSuccess"
               :on-error="handleError"
+              
             >
               <Button icon="ios-cloud-upload-outline" :class="uploadData.chooseProduct?'uploaderrorbtn':''">请选择固件</Button>
             </Upload> 
@@ -43,7 +44,11 @@
       <FormItem>
         <Row>
           <Col span="24">
-            <Button type="primary" @click="handleSubmit('productform')">保存</Button>
+            <Button type="primary" :loading="submitLoading"  @click="handleSubmit('productform')">
+                <span v-if="!submitLoading">保存</span>
+                <span v-else>Loading...</span>
+            </Button>
+            <!-- <Button type="primary" @click="handleSubmit('productform')">保存</Button> -->
           </Col>
         </Row>
       </FormItem>
@@ -75,6 +80,7 @@ export default {
           name:'',
           uploadProduct:''
         },
+        submitLoading:false,
         uploadData:{
           action:'',//上传API
           upstatus:false,//控制进度条显示
@@ -83,6 +89,7 @@ export default {
           uploadParams:{},//上传额外带的参数
           chooseProduct:false,//判断是否选择文件,用来做类名的选中与否
           uploadtips:'',//提示语
+          isupload:false,//判断是否先上传文件
         },
         // 设置验证规则
         ruleValidate: {
@@ -113,7 +120,7 @@ export default {
           this.uploadData.uploadtips = "温馨提示:请先填写固件名称";
         }else if(newval.len>=1){
           this.uploadData.disable = true;
-          this.uploadData.uploadok = false;
+          this.uploadData.chooseProduct = false;
           this.uploadData.uploadtips = "温馨提示:只可选择一个固件上传";
         }else{
           this.uploadData.disable = false;
@@ -133,7 +140,12 @@ export default {
       //这里可改为自己的需求去做处理
       let bmf = new BMF();
       let md5fname='';
-      bmf.md5(file,(err, md5) => {
+      //在此因需求又做了一次格式验证
+      if(!(re.test(handlefname))){
+        this.uploadData.uploadtips = "文件名不符合规则,请选择类似2.3.xxx组合的文件";
+        return false;
+      }else{
+        bmf.md5(file,(err, md5) => {
           md5fname = md5;
           //把需要的参数传递给后端
           addFirmwareAction({params}).then(res=>{
@@ -155,6 +167,8 @@ export default {
               file['keyID'] = keyID;
               // 保存文件到需要上传的文件数组里
               this.uploadData.uploadList.push(file);
+              //避免用户上传文件之后 删除文件 再次上传而在点击按钮的时候判断不生效
+              this.uploadData.isupload = false;
               this.$refs['productform'].validate();
             }
           }).catch(err=>{
@@ -168,6 +182,7 @@ export default {
         })
         // 返回 false 停止自动上传 我们需要手动上传
         return false;
+      }  
     },
     //上传中钩子函数
     handleProgress(event, file, fileList){
@@ -192,6 +207,7 @@ export default {
       });
       //恢复上传按钮
       this.uploadloading=false; 
+      this.uploadData.isupload = true;
       this.uploadData.uploadtips="";
     },
     //上传失败钩子函数
@@ -227,16 +243,37 @@ export default {
         // 删除需要上传文件数据里的当前文件
         this.uploadData.uploadList.forEach((item,index) => {
             if(item.keyID == keyID){
-              this.uploadData.uploadList.splice(index,1)
+              this.uploadData.uploadList.splice(index,1);
+              this.uploadData.isupload = false;
             }
+        })
+    },
+    //改变loading
+    changeLoading () {
+        this.submitLoading = true;
+        this.$nextTick(() => {
+          this.submitLoading = false;
         })
     },
     //
     handleSubmit(form){
       this.$refs[form].validate((valid) => {
         if (valid){
-          console.log('ok')
+          if(!this.uploadData.isupload){
+            this.uploadData.uploadtips = "请先上传固件";
+            this.uploadData.chooseProduct = true;
+            this.changeLoading();
+            return;
+          }else{
+            this.submitLoading = true;
+            setTimeout(()=>{
+              this.submitLoading = false;
+              this.$Message.success('保存成功');
+              console.log('ok')
+            },5000)
+          }
         }else{
+          this.changeLoading();
           this.$refs['productform'].validate();
         }
       })

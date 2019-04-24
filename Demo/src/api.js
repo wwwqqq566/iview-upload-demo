@@ -6,7 +6,7 @@ import http from './utils/request';
  */
 function addFirmwareAction(data){
     return http({
-        url:'xxxx',
+        url:'xxx',
         method:'get',
         params:data
     })
