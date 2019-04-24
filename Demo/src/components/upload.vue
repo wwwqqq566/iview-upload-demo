@@ -18,7 +18,8 @@
               :on-progress="handleProgress"
               :on-success="handleSuccess"
               :on-error="handleError"
-              
+              :format="['.img','.bin']"
+              accept=".img,.bin"
             >
               <Button icon="ios-cloud-upload-outline" :class="uploadData.chooseProduct?'uploaderrorbtn':''">请选择固件</Button>
             </Upload> 
