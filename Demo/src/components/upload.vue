@@ -7,6 +7,7 @@
       <FormItem label="选择固件" prop="uploadProduct" class="productchoose">
         <Row>
           <Col span="12">
+          <!-- 注意format格式 format中后缀名不需要加.['png','jpg'] accecpt需要加. ".png,.jpg"-->
             <Upload
               ref="upload"
               v-model="formValidate.uploadProduct"
@@ -18,7 +19,7 @@
               :on-progress="handleProgress"
               :on-success="handleSuccess"
               :on-error="handleError"
-              :format="['.img','.bin']"
+              :format="['img','bin']"
               accept=".img,.bin"
             >
               <Button icon="ios-cloud-upload-outline" :class="uploadData.chooseProduct?'uploaderrorbtn':''">请选择固件</Button>
